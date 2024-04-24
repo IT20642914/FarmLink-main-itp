@@ -1,4 +1,5 @@
 const Product = require("../Models/productModel")
+const Offer = require("../Models/offersModel")
 const cloudinary = require("cloudinary").v2
 const asyncHnadler = require("express-async-handler")
 const {fileSizeFormatter} = require("../Utills/fileupload")
@@ -83,8 +84,37 @@ const getAllProduct = asyncHnadler(async (req,res) => {
 
 const getProductByCategory = asyncHnadler(async (req, res) => {
     const category = req.params.category; // Assuming your route parameter is named 'category'
-    const products = await Product.find({ category: category }).sort("-createdAt");
-    res.status(200).json(products);
+    if (category === 'offers') {
+        // If the type is 'offers', find offers related to these products
+        const products = await Product.find({}).sort("-createdAt");
+        const productIds = products.map(product => product._id);
+        const offers = await Offer.find({ products: { $in: productIds } }).populate('products');
+        const formattedOffers = offers.flatMap(offer => offer.products.map(product => ({
+            _id: product._id,
+            user: product.user,
+            name: product.name,
+            sku: product.sku,
+            category: product.category,
+            quantity: product.quantity,
+            price: product.price,
+            description: product.description,
+            image: product.image,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt,
+            __v: product.__v,
+            offer: {
+                _id: offer._id,
+                coupon: offer.coupon,
+                discount: offer.discount,
+                startDate: offer.startDate,
+                endDate: offer.endDate
+            }
+        })));
+        res.status(200).json(formattedOffers);
+    } else {
+        const products = await Product.find({ category: category }).sort("-createdAt");
+        res.status(200).json(products);
+    }
 });
 // Get All products 
 

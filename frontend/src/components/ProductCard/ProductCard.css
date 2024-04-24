@@ -61,7 +61,7 @@
 
 
 .product-card {
-    height: 400px; 
+    height: 450px; 
 }
 
 .out-of-stock-message {
@@ -79,4 +79,26 @@
 
 .product-card:hover .out-of-stock-message {
     display: block; /* Display the message on hover */
+}
+.price-offer{
+    display: flex;
+}
+
+.offer-details {
+    width: 100%;
+    display: inline-block;
+    margin-top: 10px;
+    padding: 5px;
+    background-color: #f7f7f7;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.offer-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.offer-text {
+    margin-bottom: 5px;
 }
