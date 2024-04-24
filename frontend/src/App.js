@@ -33,8 +33,8 @@ function App() {
   const dispatch = useDispatch();
   useEffect(() => {
     async function loginStatus() {
-      const status = await getLoginStatus()
-      dispatch(SET_LOGIN(status))
+      // const status = await getLoginStatus()
+      // dispatch(SET_LOGIN(status))
     }
     loginStatus()
   }
@@ -49,7 +49,7 @@ function App() {
 
          
 
-            <Route path="/market" element={
+            <Route path="/market" element={ 
               <MarketplaceNavbar showCategories={true}>
                 <Categories />
               </MarketplaceNavbar>
@@ -117,7 +117,7 @@ function App() {
               </Sidebar>
             } />
 
-<Route path="/offers" element={<OfferManagement />} />
+        <Route path="/offers" element={<OfferManagement />} />
           <Route path="/offers-preview" element={<OfferPreview />} />
 
           </Routes>

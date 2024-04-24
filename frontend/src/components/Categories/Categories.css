@@ -33,6 +33,9 @@
     color: #5aeb5a;
 }
 
+#offers>svg {
+    color: #5ab8eb;
+}
 .spinner {
     text-align: center;
 }

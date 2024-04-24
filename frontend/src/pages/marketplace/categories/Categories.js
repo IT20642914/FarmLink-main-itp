@@ -26,7 +26,7 @@ function Categories() {
           try {
             // Retrieve saved filters or default
             const savedFilters = localStorage.getItem('priceRangeFilters');
-            const savedPriceRange = savedFilters ? JSON.parse(savedFilters) : { min: 0, max: 300 };
+            const savedPriceRange = savedFilters ? JSON.parse(savedFilters) : { min: 1, max: 300 };
       
             // Fetch products
             const res = await (category === 'all'
