@@ -21,7 +21,7 @@
     "pdfkit": "^0.15.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "Nodemon server.js"
   },
   "name": "backend",
   "version": "1.0.0",
