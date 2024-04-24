@@ -117,8 +117,31 @@ function App() {
               </Sidebar>
             } />
 
-        <Route path="/offers" element={<OfferManagement />} />
-          <Route path="/offers-preview" element={<OfferPreview />} />
+
+            <Route path="/offers" element={
+
+
+            <Sidebar>
+              <Layout>
+              <OfferManagement />
+
+              </Layout>
+            </Sidebar>
+
+
+            } />
+          <Route path="/offers-preview" element={
+            <Sidebar>
+            <Layout>
+            <OfferPreview />
+
+
+            </Layout>
+          </Sidebar>
+
+          
+          
+          } />
 
           </Routes>
         </BrowserRouter>

@@ -197,6 +197,8 @@ const OfferManagement = () => {
     setModalVisible(true);
   };
 
+
+
   return (
     <div style={{ padding: 60 }}>
       <h1>Offer Management</h1>
@@ -226,7 +228,18 @@ const OfferManagement = () => {
         footer={null}
       >
         <Form form={form} onFinish={handleSubmit}>
-          <Form.Item label="Coupon" name="coupon">
+          <Form.Item label="Coupon" name="coupon"
+            rules={[
+              {
+                validator: async (_, value) => {
+                  if (value && /\d/.test(value)) { // Check if there are any digits in the value
+                    return Promise.reject(new Error("Coupon code must not include numbers"));
+                  }
+                },
+                message: "Coupon code must not include numbers"
+              }
+            ]}
+          >
             <Input />
           </Form.Item>
           <Form.Item
