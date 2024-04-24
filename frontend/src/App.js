@@ -120,7 +120,6 @@ function App() {
 
             <Route path="/offers" element={
 
-
             <Sidebar>
               <Layout>
               <OfferManagement />
