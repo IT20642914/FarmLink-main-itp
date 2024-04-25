@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useCategory } from '../../../customHook/CategoryProvider';
 import InfiniteScroll from 'react-infinite-scroll-component';
 import CategoriesNav from '../../../components/Categories/CategoriesNav';
@@ -8,129 +8,136 @@ import productService from "../../../redux/features/product/ProductService";
 import Search from '../../../components/search/Search';
 import './Categories.css';
 import Footer from '../../../components/footer/Footer';
-import DualThumbRangeSlider from '../../../components/dualThumb/DualThumbRangeSlider'; // Make sure to import the actual slider component
+import DualThumbRangeSlider from '../../../components/dualThumb/DualThumbRangeSlider';
 
 function Categories() {
-    const [search, setSearch] = useState("");
-    const [products, setProducts] = useState([]);
-    const [filteredProducts, setFilteredProducts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [priceRange, setPriceRange] = useState({ min: 0, max: 300 });
-    const [maxPrice, setMaxPrice] = useState(0);
-    const { category } = useCategory();
-    const searchRef = useRef(null);
+  const [search, setSearch] = useState("");
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 300 });
+  const [maxPrice, setMaxPrice] = useState(0);
+  const { category } = useCategory();
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-          setLoading(true);
-          try {
-            // Retrieve saved filters or default
-            const savedFilters = localStorage.getItem('priceRangeFilters');
-            const savedPriceRange = savedFilters ? JSON.parse(savedFilters) : { min: 1, max: 300 };
-      
-            // Fetch products
-            const res = await (category === 'all'
-              ? productService.getAllProducts()
-              : productService.getProdcutsByCategory(category));
-            // Determine maximum product price
-            const maxProductPrice = Math.max(...res.map((p) => p.price));
-            setMaxPrice(maxProductPrice);
-      
-            // Update price range, ensuring it's within fetched product prices
-            setPriceRange((currentRange) => {
-              const newMin = savedPriceRange.min;
-              const newMax = savedPriceRange.max <= maxProductPrice ? savedPriceRange.max : maxProductPrice;
-              localStorage.setItem('priceRangeFilters', JSON.stringify({ min: newMin, max: newMax }));
-              return { min: newMin, max: newMax };
-            }); 
-      
-            // Set products and filteredProducts
-            
-            setProducts(res);
-            const filtered = res.filter((product) => {
-              return product.price >= savedPriceRange.min && product.price <= savedPriceRange.max;
-            });
-            setFilteredProducts(filtered);
-          } catch (err) {
-            console.error(err);
-          }
-          setLoading(false);
-        };
-      
-        fetchProducts();
-      }, [category]);
-      
-    useEffect(() => {
-        const filtered = products.filter(product =>
-            product.name.toLowerCase().includes(search.toLowerCase()) &&
-            product.price >= priceRange.min && product.price <= priceRange.max
-        );
-        setFilteredProducts(filtered);
-    }, [products, search, priceRange]);
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setLoading(true);
+      try {
+        const res = await (category === 'all'
+          ? productService.getAllProducts()
+          : productService.getProdcutsByCategory(category));
+        
+          console.log("res",res)
+        const maxProductPrice = Math.max(...res.map((p) => p.price));
+        setMaxPrice(maxProductPrice);
 
-    const handlePriceRangeChange = useCallback(([minValue, maxValue]) => {
-        const newRange = { min: minValue, max: maxValue };
-        setPriceRange(newRange);
-        localStorage.setItem('priceRangeFilters', JSON.stringify(newRange));
-    }, []); // Empty dependency array signifies this callback will never change
+        const savedFilters = localStorage.getItem('priceRangeFilters');
+        const savedPriceRange = savedFilters ? JSON.parse(savedFilters) : { min: 1, max: maxProductPrice };
 
-console.log("products",products)
-console.log("filteredProducts",filteredProducts)
+        setPriceRange(savedPriceRange);
+        setProducts(res);
+        setFilteredProducts(res.filter(product =>
+          product.price >= savedPriceRange.min && product.price <= savedPriceRange.max
+        ));
+      } catch (err) {
+        console.error(err);
+      }
+      setLoading(false);
+    };
+
+    fetchProducts();
+  }, [category]);
+
+  useEffect(() => {
+    const seenIds = new Set();
+    const filtered = products.filter(product => {
+      const uniqueId = product.offer ? `${product._id}-${product.offer._id}` : product._id;
+      if (!seenIds.has(uniqueId)) {
+        seenIds.add(uniqueId);
+        return product.name.toLowerCase().includes(search.toLowerCase()) &&
+          product.price >= priceRange.min && product.price <= priceRange.max;
+      }
+      return false;
+    });
+    setFilteredProducts(filtered);
+  }, [search, products, priceRange]);
+
+  const handlePriceRangeChange = useCallback((values) => {
+    const [minValue, maxValue] = values;
+    const newRange = { min: minValue, max: maxValue };
+    setPriceRange(newRange);
+    localStorage.setItem('priceRangeFilters', JSON.stringify(newRange));
+
+    const seenIds = new Set();
+    const filtered = products.filter(product => {
+      const uniqueId = product.offer ? `${product._id}-${product.offer._id}` : product._id;
+      if (!seenIds.has(uniqueId)) {
+        seenIds.add(uniqueId);
+        return product.name.toLowerCase().includes(search.toLowerCase()) &&
+          product.price >= minValue && product.price <= maxValue;
+      }
+      return false;
+    });
+    setFilteredProducts(filtered);
+  }, [products, search]);
+
+  const handleSearchChange = (value) => {
+    setSearch(value);
+  };
+
   return (
     <>
-        <CategoriesNav />
-        <Container fluid>
-            <Row>
-                <Col md={2} className="filter-sidebar" > 
-                    <div className="price-range-filter">
-                        <label style={{marginBottom: '4.5rem'}}>Price Range: ${priceRange.min} - ${priceRange.max}</label>
-                        <DualThumbRangeSlider
-                            min={0}
-                            max={maxPrice}
-                            values={[priceRange.min, priceRange.max]}
-                            onChange={handlePriceRangeChange}
-                        />
-                    </div>
-                    
-                </Col>
-                <Col md={9}> {/* Main content */}
-                    <Row className="justify-content-center mb-4">
-                        <Col xs={12} lg={8}>
-                            <div ref={searchRef}>
-                                <Search value={search} onChange={(e) => setSearch(e.target.value)} />
-                            </div>
-                        </Col>
-                    </Row>
-                    <Container style={{ backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
-                        {/* Products and infinite scroll */}
-                        {!loading ? (
-                            <InfiniteScroll style={{ overflow: 'hidden' }}
-                                dataLength={filteredProducts.length}
-                                next={() => {}}
-                                hasMore={false}
-                                loader={<Spinner animation="border" />}
-                            >
-                                <Row>
-                                    {filteredProducts.map((product) => (
-                                        <Col xs={8} md={5} lg={3} key={product._id.toString()}>
-                                            <ProductCard product={product} />
-                                        </Col>
-                                    ))}
-                                </Row>
-                            </InfiniteScroll>
-                        ) : (
-                            <div className="spinner">
-                                <Spinner animation="border" />
-                            </div>
-                        )}
-                    </Container>
-                    <Footer />
-                </Col>
+      <CategoriesNav />
+      <Container fluid>
+        <Row>
+          <Col md={2} className="filter-sidebar">
+            <div className="price-range-filter">
+              <label style={{ marginBottom: '4.5rem' }}>
+                Price Range: LKR {priceRange.min} - LKR {priceRange.max}
+              </label>
+              <DualThumbRangeSlider
+                min={0}
+                max={maxPrice}
+                values={[priceRange.min, priceRange.max]}
+                onChange={handlePriceRangeChange}
+              />
+            </div>
+          </Col>
+          <Col md={9}>
+            <Row className="justify-content-center mb-4">
+              <Col xs={12} lg={8}>
+                <Search value={search} onChange={(e) => handleSearchChange(e.target.value)} />
+              </Col>
             </Row>
-        </Container>
+            <Container style={{ backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
+              {!loading ? (
+                <InfiniteScroll
+                  style={{ overflow: 'hidden' }}
+                  dataLength={filteredProducts.length}
+                  next={() => {}} // Implement the logic for loading more products here
+                  hasMore={false} // Set this to true and implement logic if there are more items to load
+                  loader={<Spinner animation="border" />}
+                >
+                  <Row>
+                    {filteredProducts.map((product) => (
+                      <Col xs={12} sm={6} md={4} lg={3} key={product._id}>
+                        <ProductCard product={product} />
+                      </Col>
+                    ))}
+                  </Row>
+                </InfiniteScroll>
+              ) : (
+                <div className="spinner">
+                  <Spinner animation="border" />
+                </div>
+              )}
+            </Container>
+            <Footer />
+          </Col>
+        </Row>
+      </Container>
     </>
-);
-
+  );
 }
 
 export default Categories;

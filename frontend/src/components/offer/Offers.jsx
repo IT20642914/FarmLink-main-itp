@@ -12,7 +12,8 @@ import {
   Tag,
   message,
   Row,
-  DatePicker, // Import DatePicker
+  DatePicker,
+  InputNumber  // Import DatePicker
 } from "antd";
 import { offerService } from "../../services/offerService";
 import { productService } from "../../services/productService";
@@ -68,17 +69,26 @@ const OfferManagement = () => {
           startDate: values.dateRange[0],
           endDate: values.dateRange[1],
         });
+        setModalVisible(false);
+        fetchOffers();
+        form.resetFields();
+        setEditingOffer(null);
       } else {
-        await offerService.createOffer({
-          ...values,
+       const response= await offerService.createOffer({ ...values,
           startDate: values.dateRange[0],
           endDate: values.dateRange[1],
-        });
+        })
+        if(response.status===406){
+        message.error(response.message)
+        }else{
+          setModalVisible(false);
+          fetchOffers();
+          form.resetFields();
+          setEditingOffer(null);
+        }
+     
       }
-      setModalVisible(false);
-      fetchOffers();
-      form.resetFields();
-      setEditingOffer(null);
+     
     } catch (error) {
       console.error("Validation error:", error);
     }
@@ -243,12 +253,27 @@ const OfferManagement = () => {
             <Input />
           </Form.Item>
           <Form.Item
-            label="Discount (%)"
-            name="discount"
-            rules={[{ required: true, message: "Please input a discount" }]}
-          >
-            <Input type="number" />
-          </Form.Item>
+        label="Discount (%)"
+        name="discount"
+        rules={[
+    
+          {
+            validator: async (_, value) => {
+              if (!value) {
+                return Promise.reject(new Error('Please input a discount'));
+              }
+             
+              const numValue = parseFloat(value);
+              if (numValue < 0 || numValue > 100) {
+                return Promise.reject(new Error('Discount must be between 0 and 100'));
+              }
+              return Promise.resolve();
+            }
+          }
+        ]}
+      >
+        <InputNumber min={0} max={100}  style={{ width: '100%' }}/>
+      </Form.Item>
           <Form.Item label="Products" name="products">
             <Select
               mode="multiple"

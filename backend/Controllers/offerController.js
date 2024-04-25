@@ -23,15 +23,32 @@ exports.getOfferById = async (req, res) => {
 };
 
 exports.createOffer = async (req, res) => {
-  const offer = new Offer({
-    products: req.body.products,
-    coupon: req.body.coupon,
-    discount: req.body.discount,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate,
-  });
+  const { products, coupon, discount, startDate, endDate } = req.body;
 
   try {
+    // Check for existing offers that overlap the date range and include any of the specified products
+    const existingOffers = await Offer.find({
+      products: { $in: products },
+      $or: [
+        { startDate: { $lte: new Date(endDate) }, endDate: { $gte: new Date(startDate) } }
+      ]
+    });
+
+    if (existingOffers.length > 0) {
+      // Generate a message listing all conflicting products
+      const conflictingProducts = existingOffers.flatMap(offer => offer.products.map(product => product.toString()));
+      const uniqueConflictingProducts = [...new Set(conflictingProducts)];
+      return res.status(406).json({ message: "Some products are already part of an existing offer in the given date range", conflictingProducts: uniqueConflictingProducts ,status:406});
+    }
+
+    // If no conflicts, create the new offer
+    const offer = new Offer({
+      products,
+      coupon,
+      discount,
+      startDate,
+      endDate,
+    });
     const newOffer = await offer.save();
     res.status(201).json(newOffer);
   } catch (error) {

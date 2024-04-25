@@ -53,32 +53,47 @@ function ProductCard({ product }) {
                     </Card.Title>
                 </Link>
                 {!product.offer && ( <Card.Text as="h3">${productPrice}</Card.Text>)}
-                {product.offer && (<dive className="price-offer"><Card.Text as="h4">  <span style={{ textDecoration: 'line-through' }}>
-        ${productPrice}
-      </span>$</Card.Text>    <Card.Text as="h4">  price: ${productPrice-product.offer.discount}</Card.Text></dive>)}
+                {product.offer && (
+                     <>
+                    <div className="price-offer">
+                
+                    {/* Discounted price */}
+                    <h4 className="discounted-price">
+                        $ {product.price-(product.price * product.offer.discount) / 100} 
+                    </h4>
+                    {/* Original price with a strikethrough */}
+                    <h4 className="original-price">
+                        <span style={{ textDecoration: 'line-through' }}>
+                         ${product.price}
+                        </span>
+                    </h4>
+                    <div className="discount-percentage">
+                        -{product.offer.discount}%
+                    </div>
+                    </div>
+                    <Card.Text as="div" className="offer-text">
+                    Offer  Ends:{' '}{<Moment format="DD/MM/YYYY">{product.offer.endDate}</Moment>}
+                    </Card.Text>
+                   {product.offer.coupon&& <Card.Text as="div" className="offer-coupon">
+                   <div className="offer-coupon-text">
+                          Use below coupon To Get Offer
+                    </div>  
+                    <div className="offer-coupon-code">
+                    {product.offer.coupon}
+                    </div>
+              
+                    </Card.Text>
+                    }
+                </>
+
+                )}
+
+                  
                 <Card.Text as="div">
                     <small className="text-muted">
                         <Moment format="DD/MM/YYYY">{product?.createdAt}</Moment>
                     </small>
                 </Card.Text>
-                {product.offer && (
-                    <span className="offer-details">
-                        <div className="offer-container">
-                            <Card.Text as="div" className="offer-text">
-                                Offer: Discount ${product.offer.discount}
-                            </Card.Text>
-                            <Card.Text as="div" className="offer-text">
-                                Start Date:{' '}
-                                <Moment format="DD/MM/YYYY">{product.offer.startDate}</Moment>
-                            </Card.Text>
-                            <Card.Text as="div" className="offer-text">
-                                End Date:{' '}
-                                <Moment format="DD/MM/YYYY">{product.offer.endDate}</Moment>
-                            </Card.Text>
-                        </div>
-                    </span>
-                )}
-
                 {product.quantity <= 0 ? (
                     <div className="out-of-stock-message">Out of stock</div>
                 ) : (

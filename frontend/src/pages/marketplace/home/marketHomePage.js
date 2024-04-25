@@ -3,6 +3,7 @@ import RecentlyAddedProducts from '../../../components/marketPlace/RecentlyAdded
 import './HomePage.css'
 import TopSellingProducts from '../../../components/marketPlace/TopSellingProducts/TopSellingProducts';
 import FeatureBar from '../../../components/marketPlace/FeatureBar/FeatureBar';
+import SpecialOffers from '../../../components/marketPlace/SpecialOffers/SpecialOffers';
 const MarketplaceHomePage = () => {
   return (
     <div>
@@ -19,11 +20,7 @@ const MarketplaceHomePage = () => {
       {/* Special Offers Section */}
       <section>
         <h2>Special Offers</h2>
-        {/* Placeholder for Special Offers Component */}
-        <div style={{margin: '20px 0'}}>
-          Special Offers Here
-        </div>
-        {/* <SpecialOffers /> */}
+        <SpecialOffers />
       </section>
 
       {/* Most Bought Products Section */}
