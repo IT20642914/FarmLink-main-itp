@@ -72,15 +72,67 @@ const  createProduct = asyncHnadler(async (req,res) => {
 
 })
 
-// Get All products  In DB 
+const getAllProduct = asyncHnadler(async (req, res) => {
+    const products = await Product.find().sort("-createdAt");
 
-const getAllProduct = asyncHnadler(async (req,res) => {
-    const products = await Product.find({}).sort("-createdAt") 
-    res.status(200).json(products)
- })
+    const productIds = products.map(product => product._id);
+
+    const offers = await Offer.find({ products: { $in: productIds } }).populate('products');
+    const formattedOffers = offers.flatMap(offer => offer.products.map(product => ({
+            _id: product._id,
+            user: product.user,
+            name: product.name,
+            sku: product.sku,
+            category: product.category,
+            quantity: product.quantity,
+            price: product.price,
+            description: product.description,
+            image: product.image,
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt,
+            __v: product.__v,
+            offer: {
+                _id: offer._id,
+                coupon: offer.coupon,
+                discount: offer.discount,
+                startDate: offer.startDate,
+                endDate: offer.endDate
+            }
+        })));
+
+    const mergedProducts = products.map(product => {
+        const offer = formattedOffers.find(offer => offer._id.equals(product._id));
+        return {
+            ...product.toObject(),
+            offer: offer ? {
+                _id: offer.offer._id,
+                coupon: offer.offer.coupon,
+                discount: offer.offer.discount,
+                startDate: offer.offer.startDate,
+                endDate: offer.offer.endDate
+            } : null
+        };
+    });
+
+    // Send the response with merged products and offers
+    res.status(200).json( mergedProducts );
+});
 
 
- // Get all products by category
+
+const mergeProductsAndOffers = (products, offers) => {
+    // Create a map of offers indexed by product ID
+    const offerMap = new Map(offers.map(offer => [offer.products._id.toString(), offer]));
+
+    // Iterate over each product and merge the offer if available
+    const mergedProducts = products.map(product => {
+        const offer = offerMap.get(product._id.toString());
+        return { ...product, offer: offer || null };
+    });
+
+    return mergedProducts;
+};
+
 
 const getProductByCategory = asyncHnadler(async (req, res) => {
     const category = req.params.category; // Assuming your route parameter is named 'category'
@@ -122,42 +174,51 @@ const getProduct = asyncHnadler(async (req,res) => {
     const products = await Product.find({user:/*req.user._id*/demo}).sort("-createdAt")
     res.status(200).json(products)
  })
- 
- // Get single product
- 
- const getSingleProduct = asyncHnadler(async (req,res) => {
-     const product = await Product.findById(req.params.id)
-     if(!product){
-         // if product doesnt exits
-         res.status(404)
-         throw new Error("Product not found")
-     }
-     // match product to its user
-     if(product.user.toString() !== /*req.user._id*/demo){
-         res.status(401)
-         throw new Error("User Not authorized")
-     }
-     res.status(200).json(product);
- 
- 
- 
- })
 
   // Get single product Marketplace without user
  
   const getSingleProductAll = asyncHnadler(async (req, res) => {
     const product = await Product.findById(req.params.id);
+    const offers = await Offer.find({ products: { $in: req.params.id } }).populate('products');
+
     if (!product) {
         res.status(404);
         throw new Error("Product not found");
     }
-    res.status(200).json(product);
+
+    const singleProduct = {
+        _id: product._id,
+        user: product.user,
+        name: product.name,
+        sku: product.sku,
+        category: product.category,
+        quantity: product.quantity,
+        price: product.price,
+        description: product.description,
+        image: product.image,
+        createdAt: product.createdAt,
+        updatedAt: product.updatedAt,
+        __v: product.__v,
+        offer: null // Default to null if no offers are found
+    };
+
+    if (offers.length > 0) {
+        const offerData = offers.flatMap(offer => offer.products.map(product => ({
+                    _id: offer._id,
+                    coupon: offer.coupon,
+                    discount: offer.discount,
+                    startDate: offer.startDate,
+                    endDate: offer.endDate
+                
+            })));
+         singleProduct.offer = offerData[0] || null;
+
+        }
+
+    res.status(200).json(singleProduct);
 });
 
- 
- 
- // Delete Product
- 
+
  const deleteProduct = asyncHnadler(async (req,res) => {
  
      const product = await Product.findById(req.params.id)
@@ -338,7 +399,6 @@ const generateAndDownloadReport = asyncHnadler(async (req, res) => {
 
      createProduct,
      getProduct, 
-     getSingleProduct, 
      deleteProduct,
      updateProduct,
      getAllProduct,

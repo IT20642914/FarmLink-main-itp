@@ -6,7 +6,6 @@ const {
   updateProduct,
   deleteProduct,
   getProduct,
-  getSingleProduct,
   getAllProduct,
   getSingleProductAll,
   getProductByCategory,
@@ -25,7 +24,6 @@ router.delete("/:id",deleteProduct);
 router.get("/all",getAllProduct);
 router.get("/",  getProduct);
 router.get("/:id",  getSingleProductAll);
-router.get("/:id", getSingleProduct);
 router.get('/category/:category',getProductByCategory);
 router.delete('/products/deleteall', deleteAllProducts);
 router.get('/user-products/:id',getProductsById);
