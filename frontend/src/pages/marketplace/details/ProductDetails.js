@@ -8,6 +8,7 @@ import './ProductDetails.css';
 import ProductCard from '../../../components/ProductCard/ProductCard';
 import Footer from '../../../components/footer/Footer';
 
+import Moment from 'react-moment';
 
 
 
@@ -108,8 +109,41 @@ function ProductDetails() {
                     <Card className="p-3">
                         <Card.Body>
                             <Card.Title as="h3">{product.name}</Card.Title>
-                            <h3>{product.price}$</h3>
-                            <div className="counter">
+                            
+                            {!product.offer &&<h3>{product.price}$</h3>}
+                            {product.offer && (
+                     <>
+                    <div className="price-offer">
+                
+                    {/* Discounted price */}
+                    <h4 className="discounted-price">
+                        $ {product.price-(product.price * product.offer.discount) / 100} 
+                    </h4>
+                    {/* Original price with a strikethrough */}
+                    <h4 className="original-price">
+                        <span style={{ textDecoration: 'line-through' }}>
+                         ${product.price}
+                        </span>
+                    </h4>
+                    <div className="discount-percentage">
+                        -{product.offer.discount}%
+                    </div>
+                    </div>
+                    <Card.Text as="div" className="offer-text">
+                    Offer  Ends:{' '}{<Moment format="DD/MM/YYYY">{product.offer.endDate}</Moment>}
+                    </Card.Text>
+                   {product.offer.coupon&& <Card.Text as="div" className="offer-coupon">
+                   <div className="offer-coupon-text">
+                          Use below coupon To Get Offer
+                    </div>  
+                    <div className="offer-coupon-code">
+                    {product.offer.coupon}
+                    </div>
+              
+                    </Card.Text>
+                    }
+                </>
+                )}<div className="counter">
                                 <button onClick={decrementCount} className="counter-button" disabled={count <= 1}>-</button>
                                 <input type="text" value={count} readOnly className="counter-input" />
                                 <button onClick={incrementCount} className="counter-button" disabled={count >= maxPiecesAvailable}>+</button>
