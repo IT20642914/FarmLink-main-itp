@@ -13,13 +13,14 @@ import {
   message,
   Row,
   DatePicker,
-  InputNumber  // Import DatePicker
+  InputNumber,
 } from "antd";
 import { offerService } from "../../services/offerService";
 import { productService } from "../../services/productService";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import moment from "moment";
+import Moment from "react-moment";
 const { Option } = Select;
 
 const OfferManagement = () => {
@@ -29,25 +30,50 @@ const OfferManagement = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [form] = Form.useForm();
   const [editingOffer, setEditingOffer] = useState(null);
+  const [filterStartDate, setFilterStartDate] = useState(null);
+  const [filterEndDate, setFilterEndDate] = useState(null);
+
   useEffect(() => {
     fetchOffers();
     fetchProducts();
   }, []);
 
-  const fetchOffers = async () => {
+  const fetchOffers = async (startDate, endDate) => {
     try {
-      const data = await offerService.getAllOffers();
+      const data = await offerService.getAllOffers(startDate, endDate);
       setOffers(data);
     } catch (error) {
       console.error("Error fetching offers:", error);
     }
   };
+
   const fetchProducts = async () => {
     try {
       const data = await productService.getAllProducts();
       setProducts(data);
     } catch (error) {
       console.error("Error fetching products:", error);
+    }
+  };
+
+  const handleFilterChange = async (dates) => {
+    if (dates) {
+      const startDate = dates[0].toISOString();
+      const endDate = dates[1].toString();
+    console.log("first",endDate)
+      setFilterStartDate(dates[0]);
+      setFilterEndDate( dates[0]);
+      const data = await offerService.getoffersBydate(startDate,endDate);
+      if(data){
+        console.log("dataresponse",data)
+        setOffers(data)
+      }
+    
+
+    } else {
+      setFilterStartDate(null);
+      setFilterEndDate(null);
+      fetchOffers();
     }
   };
 
@@ -74,21 +100,20 @@ const OfferManagement = () => {
         form.resetFields();
         setEditingOffer(null);
       } else {
-       const response= await offerService.createOffer({ ...values,
+        const response = await offerService.createOffer({
+          ...values,
           startDate: values.dateRange[0],
           endDate: values.dateRange[1],
-        })
-        if(response.status===406){
-        message.error(response.message)
-        }else{
+        });
+        if (response.status === 406) {
+          message.error(response.message);
+        } else {
           setModalVisible(false);
           fetchOffers();
           form.resetFields();
           setEditingOffer(null);
         }
-     
       }
-     
     } catch (error) {
       console.error("Validation error:", error);
     }
@@ -120,13 +145,13 @@ const OfferManagement = () => {
       title: "Start Date",
       dataIndex: "startDate",
       key: "startDate",
-      render: (startDate) => moment(startDate).format("YYYY-MM-DD"), // Format date using Moment.js
+      render: (startDate) => moment(startDate).format("YYYY-MM-DD"),
     },
     {
       title: "End Date",
       dataIndex: "endDate",
       key: "endDate",
-      render: (endDate) => moment(endDate).format("YYYY-MM-DD"), // Format date using Moment.js
+      render: (endDate) => moment(endDate).format("YYYY-MM-DD"),
     },
     {
       title: "Products",
@@ -199,107 +224,45 @@ const OfferManagement = () => {
     setEditingOffer(offer);
     form.setFieldsValue({
       ...offer,
-      //   dateRange: [
-      //     moment(offer.startDate).format("YYYY-MM-DD"),
-      //     moment(offer.endDate).format("YYYY-MM-DD"),
-      //   ],
     });
     setModalVisible(true);
   };
 
-
+  const handleFilterProducts = () => {
+    if (filterStartDate && filterEndDate) {
+      fetchOffers(filterStartDate, filterEndDate);
+    } else {
+      message.warning("Please select start and end dates to filter products.");
+    }
+  };
 
   return (
     <div style={{ padding: 60 }}>
       <h1>Offer Management</h1>
-      <Row justify={"space-between"}>
-        <Button
-          type="primary"
-          style={{ marginBottom: 20 }}
-          onClick={handleAddOffer}
-        >
+      <Row justify={"space-between"} style={{ marginBottom: 20 }}>
+        <DatePicker.RangePicker
+          onChange={handleFilterChange}
+          style={{ marginRight: 20 }}
+        />
+        <Button type="primary" onClick={handleAddOffer}>
           Add Offer
         </Button>
-        <Button href="/offers-preview">Preview</Button>
-        <Button
-          type="primary"
-          style={{ marginBottom: 20 }}
-          onClick={generatePDF}
-        >
+        <Button type="primary" onClick={generatePDF}>
           Download Report
+        </Button>
+        <Button type="primary" onClick={handleFilterProducts}>
+          Filter Products
         </Button>
       </Row>
       <Table dataSource={offers} columns={columns} rowKey="_id" />
 
       <Modal
         title={editingOffer ? "Edit Offer" : "Add Offer"}
-        open={modalVisible}
+        visible={modalVisible}
         onCancel={handleCancel}
         footer={null}
       >
         <Form form={form} onFinish={handleSubmit}>
-          <Form.Item label="Coupon" name="coupon"
-            rules={[
-              {
-                validator: async (_, value) => {
-                  if (value && /\d/.test(value)) { // Check if there are any digits in the value
-                    return Promise.reject(new Error("Coupon code must not include numbers"));
-                  }
-                },
-                message: "Coupon code must not include numbers"
-              }
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-        label="Discount (%)"
-        name="discount"
-        rules={[
-    
-          {
-            validator: async (_, value) => {
-              if (!value) {
-                return Promise.reject(new Error('Please input a discount'));
-              }
-             
-              const numValue = parseFloat(value);
-              if (numValue < 0 || numValue > 100) {
-                return Promise.reject(new Error('Discount must be between 0 and 100'));
-              }
-              return Promise.resolve();
-            }
-          }
-        ]}
-      >
-        <InputNumber min={0} max={100}  style={{ width: '100%' }}/>
-      </Form.Item>
-          <Form.Item label="Products" name="products">
-            <Select
-              mode="multiple"
-              placeholder="Select products"
-              onChange={(value) => setSelectedProducts(value)}
-            >
-              {products.map((product) => (
-                <Option key={product._id} value={product._id}>
-                  {product.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-          {/* Date Range Picker */}
-          <Form.Item
-            label="Date Range"
-            name="dateRange"
-            rules={[{ required: true, message: "Please select date range" }]}
-          >
-            <DatePicker.RangePicker />
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">
-              {editingOffer ? `Edit` : `Submit`}
-            </Button>
-          </Form.Item>
         </Form>
       </Modal>
     </div>

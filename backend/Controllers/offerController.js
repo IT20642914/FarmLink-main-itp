@@ -85,3 +85,25 @@ exports.deleteOffer = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.getOffersByDate = async (req, res) => {
+  try {
+
+    console.log(req.query.startDate)
+    // Parse start date and end date from query parameters
+    const startDate = req.query.startDate
+    const endDate = req.query.endDate
+
+    // Query offers within the specified date range
+    const offers = await Offer.find({
+      startDate: { $gte: startDate },
+      endDate: { $lte: endDate },
+    });
+
+    // Return offers as response
+    res.json(offers);
+  } catch (error) {
+    // Handle errors
+    res.status(500).json({ message: error.message });
+  }
+};

@@ -6,6 +6,7 @@ export const offerService = {
   createOffer,
   updateOffer,
   deleteOffer,
+  getoffersBydate
 };
 
 async function getAllOffers() {
@@ -43,6 +44,13 @@ async function updateOffer(id, offerData) {
 async function deleteOffer(id) {
   const response = await fetch(`${BASE_URL}/offers/${id}`, {
     method: "DELETE",
+  });
+  return await response.json();
+}
+
+async function getoffersBydate(startDate,endDate){
+  const response = await fetch(`${BASE_URL}/offers/byDate?startDate=${startDate}&endDate=${endDate}`, {
+    method: "GET",
   });
   return await response.json();
 }

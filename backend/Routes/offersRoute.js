@@ -4,6 +4,7 @@ const offerController = require("../Controllers/offerController");
 
 // Routes for CRUD operations
 router.get("/", offerController.getAllOffers);
+router.get("/byDate", offerController.getOffersByDate); 
 router.get("/:id", offerController.getOfferById);
 router.post("/", offerController.createOffer);
 router.put("/:id", offerController.updateOffer);
